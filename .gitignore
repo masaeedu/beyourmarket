@@ -206,3 +206,6 @@ FakesAssemblies/
 
 #BeYourMarket exclude
 *.pot.backup
+/src/BeYourMarket.Web/ErrorLogs
+/src/BeYourMarket.Web/Images/Profile
+/src/BeYourMarket.Web/locale
