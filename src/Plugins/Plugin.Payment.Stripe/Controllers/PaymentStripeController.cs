@@ -32,7 +32,8 @@ namespace Plugin.Payment.Stripe.Controllers
         private readonly IOrderService _orderService;
 
         private readonly IStripeTransactionService _transactionService;
-        private readonly IStripeConnectService _stripConnectService;
+        private readonly IStripeConnectService _stripeConnectService;
+        private readonly IStripeCustomerReferenceService _stripeCusRefService;
         private readonly IUnitOfWorkAsync _unitOfWorkAsyncStripe;
 
         public PaymentStripeController(
@@ -42,6 +43,7 @@ namespace Plugin.Payment.Stripe.Controllers
             IOrderService orderService,
             IStripeTransactionService transationService,
             IStripeConnectService stripConnectService,
+            IStripeCustomerReferenceService stripeCusRefService,
             [Dependency("unitOfWorkStripe")] IUnitOfWorkAsync unitOfWorkAsyncStripe)
         {
             _settingDictionaryService = settingDictionaryService;
@@ -51,7 +53,8 @@ namespace Plugin.Payment.Stripe.Controllers
             _orderService = orderService;
 
             _transactionService = transationService;
-            _stripConnectService = stripConnectService;
+            _stripeConnectService = stripConnectService;
+            _stripeCusRefService = stripeCusRefService;
             _unitOfWorkAsyncStripe = unitOfWorkAsyncStripe;
         }
 
@@ -75,11 +78,34 @@ namespace Plugin.Payment.Stripe.Controllers
             if (order == null)
                 return new HttpNotFoundResult();
 
-            var stripeConnectQuery = await _stripConnectService.Query(x => x.UserID == order.UserProvider).SelectAsync();
+            var stripeConnectQuery = await _stripeConnectService.Query(x => x.UserID == order.UserProvider).SelectAsync();
             var stripeConnect = stripeConnectQuery.FirstOrDefault();
 
             if (stripeConnect == null)
                 return new HttpNotFoundResult();
+
+            // Check for customer profile
+            var userId = User.Identity.GetUserId();
+
+            // Create a customer profile for future checkouts
+            var customerCreate = new StripeCustomerCreateOptions()
+            {
+                Email = stripeEmail,
+                Source = new StripeSourceOptions()
+                {
+                    TokenId = stripeToken
+                }
+            };
+            var customerCreateService = new StripeCustomerService(CacheHelper.GetSettingDictionary("StripeApiKey").Value);
+            var response = customerCreateService.Create(customerCreate);
+
+            var customer = new StripeCustomerReference() {
+                UserID = userId,
+                StripeCustomerID = response.Id,
+                ObjectState = Repository.Pattern.Infrastructure.ObjectState.Added
+            };
+            _stripeCusRefService.Insert(customer);
+            await _unitOfWorkAsyncStripe.SaveChangesAsync();
 
             //https://stripe.com/docs/checkout
             var charge = new StripeChargeCreateOptions();
@@ -87,10 +113,7 @@ namespace Plugin.Payment.Stripe.Controllers
             // always set these properties
             charge.Amount = order.PriceInCents;
             charge.Currency = CacheHelper.Settings.Currency;
-            charge.Source = new StripeSourceOptions()
-            {
-                TokenId = stripeToken
-            };
+            charge.CustomerId = customer.StripeCustomerID;
 
             // set booking fee
             var bookingFee = (int)Math.Round(CacheHelper.Settings.TransactionFeePercent * order.PriceInCents);
@@ -115,7 +138,7 @@ namespace Plugin.Payment.Stripe.Controllers
                 OrderID = id,
                 ChargeID = stripeCharge.Id,
                 StripeEmail = stripeEmail,
-                StripeToken = stripeToken,
+                CustomerId = customer.StripeCustomerID,
                 Created = DateTime.Now,
                 LastUpdated = DateTime.Now,
                 FailureCode = stripeCharge.FailureCode,
@@ -172,12 +195,12 @@ namespace Plugin.Payment.Stripe.Controllers
         public ActionResult PaymentSettingDeauthorize()
         {
             var userId = User.Identity.GetUserId();
-            var stripeConnectQuery = _stripConnectService.Query(x => x.UserID == userId).Select();
+            var stripeConnectQuery = _stripeConnectService.Query(x => x.UserID == userId).Select();
             var stripeConnect = stripeConnectQuery.FirstOrDefault();
 
             // Delete old one and insert new one
             if (stripeConnect != null)
-                _stripConnectService.Delete(stripeConnect);
+                _stripeConnectService.Delete(stripeConnect);
 
             var client = new RestClient("https://connect.stripe.com/oauth/deauthorize");
 
@@ -210,19 +233,19 @@ namespace Plugin.Payment.Stripe.Controllers
                 if (string.IsNullOrEmpty(response.Data.error))
                 {
                     var userId = User.Identity.GetUserId();
-                    var stripeConnectQuery = _stripConnectService.Query(x => x.UserID == userId).Select();
+                    var stripeConnectQuery = _stripeConnectService.Query(x => x.UserID == userId).Select();
                     var stripeConnect = stripeConnectQuery.FirstOrDefault();
 
                     // Delete old one and insert new one
                     if (stripeConnect != null)
-                        _stripConnectService.Delete(stripeConnect);
+                        _stripeConnectService.Delete(stripeConnect);
 
                     response.Data.UserID = User.Identity.GetUserId();
                     response.Data.Created = DateTime.Now;
                     response.Data.LastUpdated = DateTime.Now;
                     response.Data.ObjectState = Repository.Pattern.Infrastructure.ObjectState.Added;
 
-                    _stripConnectService.Insert(response.Data);
+                    _stripeConnectService.Insert(response.Data);
                     _unitOfWorkAsyncStripe.SaveChanges();
 
                     TempData[TempDataKeys.UserMessage] = "[[[Connnect to stripe successfully!]]]";
@@ -238,7 +261,7 @@ namespace Plugin.Payment.Stripe.Controllers
             else
             {
                 var userId = User.Identity.GetUserId();
-                var stripeConnectQuery = _stripConnectService.Query(x => x.UserID == userId).Select();
+                var stripeConnectQuery = _stripeConnectService.Query(x => x.UserID == userId).Select();
                 var stripeConnect = stripeConnectQuery.FirstOrDefault();
 
                 if (stripeConnect != null)
@@ -299,7 +322,7 @@ namespace Plugin.Payment.Stripe.Controllers
 
         public bool HasPaymentMethod(string userId)
         {
-            return _stripConnectService.Query(x => x.UserID == userId).Select().Any();
+            return _stripeConnectService.Query(x => x.UserID == userId).Select().Any();
         }
 
         public int GetTransactionCount()

@@ -19,12 +19,14 @@ namespace Plugin.Payment.Stripe.Data
         {
         }
 
+        public DbSet<StripeCustomerReference> StripeCustomerReferences { get; set; }
         public DbSet<StripeConnect> StripeConnects { get; set; }
         public DbSet<StripeTransaction> StripeTransactions { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
-            modelBuilder.Conventions.Remove<System.Data.Entity.ModelConfiguration.Conventions.OneToManyCascadeDeleteConvention>();            
+            modelBuilder.Conventions.Remove<System.Data.Entity.ModelConfiguration.Conventions.OneToManyCascadeDeleteConvention>();
+            modelBuilder.Configurations.Add(new StripeCustomerReferenceMap());          
             modelBuilder.Configurations.Add(new StripeConnectMap());
             modelBuilder.Configurations.Add(new StripeTransactionMap());
         }

@@ -139,6 +139,8 @@
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="App_Start\UnityMvcActivator.cs" />
     <Compile Include="Controllers\PaymentStripeController.cs" />
+    <Compile Include="Data\StripeCustomerReference.cs" />
+    <Compile Include="Data\StripeCustomerReferenceMap.cs" />
     <Compile Include="Data\StripeTransactionMap.cs" />
     <Compile Include="Data\StripeTransaction.cs" />
     <Compile Include="Data\StripeConnect.cs" />
@@ -149,6 +151,7 @@
     <Compile Include="Models\Grids\TransactionGrid.cs" />
     <Compile Include="Models\OrderTransactionModel.cs" />
     <Compile Include="Models\PaymentSettingModel.cs" />
+    <Compile Include="Services\StripeCustomerReferenceService.cs" />
     <Compile Include="Services\StripeTransactionService.cs" />
     <Compile Include="Services\StripeConnectService.cs" />
     <Compile Include="StripePlugin.cs" />

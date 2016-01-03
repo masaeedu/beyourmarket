@@ -19,7 +19,7 @@ namespace Plugin.Payment.Stripe.Data
                 .IsRequired()
                 .HasMaxLength(100);
 
-            this.Property(t => t.StripeToken)
+            this.Property(t => t.CustomerId)
                 .IsRequired()
                 .HasMaxLength(100);
 
@@ -38,7 +38,7 @@ namespace Plugin.Payment.Stripe.Data
             this.Property(t => t.ID).HasColumnName("ID");
             this.Property(t => t.OrderID).HasColumnName("OrderID");
             this.Property(t => t.ChargeID).HasColumnName("ChargeID");
-            this.Property(t => t.StripeToken).HasColumnName("StripeToken");
+            this.Property(t => t.CustomerId).HasColumnName("StripeToken");
             this.Property(t => t.StripeEmail).HasColumnName("StripeEmail");
             this.Property(t => t.IsCaptured).HasColumnName("IsCaptured");
             this.Property(t => t.FailureCode).HasColumnName("FailureCode");

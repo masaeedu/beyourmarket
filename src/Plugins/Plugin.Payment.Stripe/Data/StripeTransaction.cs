@@ -13,7 +13,7 @@ namespace Plugin.Payment.Stripe.Data
         public int ID { get; set; }
         public int OrderID { get; set; }
         public string ChargeID { get; set; }
-        public string StripeToken { get; set; }
+        public string CustomerId { get; set; }
         public string StripeEmail { get; set; }
         public bool IsCaptured { get; set; }
         public string FailureCode { get; set; }

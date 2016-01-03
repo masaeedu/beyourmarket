@@ -30,6 +30,12 @@ namespace Plugin.Payment.Stripe
                     new ResolvedParameter<Repository.Pattern.DataContext.IDataContextAsync>("dataContextStripe")
                 ));
 
+            container.RegisterType<IRepositoryAsync<StripeCustomerReference>, Repository<StripeCustomerReference>>(
+                new InjectionConstructor(
+                    new ResolvedParameter<IDataContextAsync>("dataContextStripe"),
+                    new ResolvedParameter<IUnitOfWorkAsync>("unitOfWorkStripe")
+                ));
+
             container.RegisterType<IRepositoryAsync<StripeConnect>, Repository<StripeConnect>>(
                 new InjectionConstructor(
                     new ResolvedParameter<IDataContextAsync>("dataContextStripe"),
@@ -42,6 +48,7 @@ namespace Plugin.Payment.Stripe
                     new ResolvedParameter<IUnitOfWorkAsync>("unitOfWorkStripe")
                 ));
 
+            container.RegisterType<IStripeCustomerReferenceService, StripeCustomerReferenceService>();
             container.RegisterType<IStripeConnectService, StripeConnectService>();
             container.RegisterType<IStripeTransactionService, StripeTransactionService>();
         }
