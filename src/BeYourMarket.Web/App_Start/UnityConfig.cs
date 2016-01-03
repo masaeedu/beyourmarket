@@ -34,7 +34,6 @@ namespace BeYourMarket.Web.App_Start
                 .RegisterType<IRepositoryAsync<ListingPicture>, Repository<ListingPicture>>()
                 .RegisterType<IRepositoryAsync<Picture>, Repository<Picture>>()
                 .RegisterType<IRepositoryAsync<Order>, Repository<Order>>()
-                .RegisterType<IRepositoryAsync<StripeConnect>, Repository<StripeConnect>>()
                 .RegisterType<IRepositoryAsync<MetaField>, Repository<MetaField>>()
                 .RegisterType<IRepositoryAsync<MetaCategory>, Repository<MetaCategory>>()
                 .RegisterType<IRepositoryAsync<ListingMeta>, Repository<ListingMeta>>()
